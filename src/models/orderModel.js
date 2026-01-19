@@ -6,7 +6,8 @@ export const createOrderTransaction = async (userId, orderData) => {
   try {
     await client.query('BEGIN');
 
-    const { vendor_id, car_id, payment_method, pickup_time, items } = orderData;
+    // اضافه کردن customer_note به ورودی‌ها
+    const { vendor_id, car_id, payment_method, pickup_time, items, customer_note } = orderData;
 
     let calculatedTotal = 0;
     const processedItems = [];
@@ -28,20 +29,27 @@ export const createOrderTransaction = async (userId, orderData) => {
       });
     }
 
+    // اضافه کردن customer_note به کوئری INSERT
     const orderSql = `
-      INSERT INTO orders (user_id, vendor_id, car_id, payment_method, total_price, pickup_time, status)
-      VALUES ($1, $2, $3, $4, $5, $6, 'PENDING')
+      INSERT INTO orders (user_id, vendor_id, car_id, payment_method, total_price, pickup_time, status, customer_note)
+      VALUES ($1, $2, $3, $4, $5, $6, 'PENDING', $7)
       RETURNING *
     `;
     
     const orderResult = await client.query(orderSql, [
-      userId, vendor_id, car_id, payment_method, calculatedTotal, pickup_time
+      userId, 
+      vendor_id, 
+      car_id, 
+      payment_method, 
+      calculatedTotal, 
+      pickup_time,
+      customer_note // ذخیره یادداشت مشتری
     ]);
     const newOrder = orderResult.rows[0];
 
     for (const item of processedItems) {
       const itemSql = `
-        INSERT INTO order_items (order_id, menu_item_id, quantity, price_at_time)
+        INSERT INTO order_items (order_id, menu_item_id, quantity, price_at_order)
         VALUES ($1, $2, $3, $4)
       `;
       await client.query(itemSql, [newOrder.id, item.menu_item_id, item.quantity, item.price_at_order]);
@@ -67,8 +75,10 @@ export const getUserOrders = async (userId) => {
       o.created_at, 
       o.vendor_id,
       o.car_id,
+      o.customer_note, -- دریافت یادداشت در لیست سفارشات
       v.name as vendor_name, 
-      v.menu_image_url
+      v.menu_image_url,
+      v.phone as vendor_phone -- دریافت شماره تلفن رستوران برای قابلیت تماس
     FROM orders o
     JOIN vendors v ON o.vendor_id = v.id
     WHERE o.user_id = $1
@@ -90,7 +100,43 @@ export const updateOrderStatusDb = async (orderId, status) => {
 };
 
 export const getOrderById = async (orderId) => {
-  const sql = `SELECT * FROM orders WHERE id = $1`;
+  // اضافه کردن JOIN برای گرفتن اطلاعات ماشین و رستوران در صفحه جزئیات
+  const sql = `
+    SELECT 
+      o.*, 
+      v.name as vendor_name, 
+      v.phone as vendor_phone,
+      c.model as car_model,
+      c.plate_number as car_plate
+    FROM orders o
+    JOIN vendors v ON o.vendor_id = v.id
+    JOIN cars c ON o.car_id = c.id
+    WHERE o.id = $1
+  `;
   const result = await pool.query(sql, [orderId]);
   return result.rows[0];
+};
+export const rateOrderDb = async (orderId, rating) => {
+  const sql = `
+    UPDATE orders 
+    SET rating = $1 
+    WHERE id = $2 
+    RETURNING *
+  `;
+  const result = await pool.query(sql, [rating, orderId]);
+  return result.rows[0];
+};
+export const getOrderItems = async (orderId) => {
+  const sql = `
+    SELECT 
+      oi.menu_item_id as id, 
+      mi.name, 
+      mi.price, 
+      oi.quantity 
+    FROM order_items oi
+    JOIN menu_items mi ON oi.menu_item_id = mi.id
+    WHERE oi.order_id = $1
+  `;
+  const result = await pool.query(sql, [orderId]);
+  return result.rows;
 };
