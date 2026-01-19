@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vendor Tablet Simulation</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f0f0f0; }
+        .card { background: white; padding: 20px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .alert { background: #ff4757; color: white; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+    <h1>👨‍🍳 Restaurant Dashboard</h1>
+    <p>Status: <span id="status">Disconnected</span></p>
+    
+    <div id="notifications"></div>
+
+    <script>
+        // ID رستورانی که ساختی رو اینجا بذار
+        const VENDOR_ID = 'VENDOR_ID_HERE'; 
+
+        const socket = io('http://localhost:3000');
+
+        socket.on('connect', () => {
+            document.getElementById('status').innerText = 'Connected ✅';
+            console.log('Connected to server');
+            
+            // عضو شدن در روم رستوران
+            socket.emit('join_vendor', VENDOR_ID);
+        });
+
+        // شنیدن صدای "سفارش جدید"
+        socket.on('new_order', (data) => {
+            addNotification(`💰 New Order! Price: ${data.totalPrice} KD`, false);
+        });
+
+        // شنیدن صدای "مشتری رسید"
+        socket.on('customer_arrived', (data) => {
+            addNotification(`🚗 ${data.body}`, true);
+            // اینجا می‌تونیم صدا هم پخش کنیم (BEEP!)
+        });
+
+        function addNotification(text, isAlert) {
+            const div = document.createElement('div');
+            div.className = 'card ' + (isAlert ? 'alert' : '');
+            div.innerText = text + ' - ' + new Date().toLocaleTimeString();
+            document.getElementById('notifications').prepend(div);
+        }
+    </script>
+</body>
+</html>
