@@ -1,6 +1,7 @@
 import * as orderModel from '../models/orderModel.js';
 
 export const createOrder = async (req, res) => {
+  console.log('--- Creating Order ---', req.body);
   try {
     const userId = req.user.id;
     // اضافه کردن customer_note به لیست فیلدهای دریافتی از بدنه درخواست
@@ -19,17 +20,47 @@ export const createOrder = async (req, res) => {
       customer_note // پاس دادن یادداشت مشتری به مدل
     });
 
-    // اطلاع‌رسانی آنی به فروشنده
+    // اطلاع‌رسانی آنی به فروشنده با اطلاعات کامل
     try {
       const io = req.app.get('socketio');
       if (io) {
-        io.to(`vendor_${vendor_id}`).emit('new_order', {
-          order: newOrder,
+        console.log(`\n📦 ===== NEW ORDER CREATED =====`);
+        console.log(`   Order ID: ${newOrder.id}`);
+        console.log(`   Vendor ID: ${vendor_id}`);
+        
+        // Get complete order details with items, car, customer info
+        const completeOrder = await orderModel.getOrderWithDetails(newOrder.id);
+        
+        if (!completeOrder) {
+          console.log('❌ Could not fetch complete order details');
+          return res.status(201).json(newOrder);
+        }
+        
+        console.log(`📋 Order details fetched successfully`);
+        console.log(`   Items count: ${completeOrder.items?.length || 0}`);
+        console.log(`   Customer phone: ${completeOrder.customer_phone || 'N/A'}`);
+        console.log(`   Car: ${completeOrder.car_model || 'N/A'} - ${completeOrder.car_plate || 'N/A'}`);
+        
+        const roomName = `vendor_${vendor_id}`;
+        console.log(`📢 Emitting new_order to room: ${roomName}`);
+        
+        // Check if there are any sockets in this room
+        const socketsInRoom = await io.in(roomName).fetchSockets();
+        console.log(`   Sockets in room: ${socketsInRoom.length}`);
+        
+        io.to(roomName).emit('new_order', {
+          order: completeOrder,
           message: 'New Order Received! 🍔'
         });
+        
+        console.log(`✅ Order notification sent to vendor ${vendor_id}`);
+        console.log(`=====================================\n`);
+      } else {
+        console.log('❌ Socket.io not available');
       }
     } catch (socketError) {
-      console.log('Socket error (order created though):', socketError.message);
+      console.error('❌ Socket error:', socketError);
+      console.error('Stack:', socketError.stack);
     }
 
     res.status(201).json(newOrder);

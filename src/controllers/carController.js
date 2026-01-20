@@ -9,7 +9,7 @@ export const addUserCar = async (req, res) => {
       return res.status(400).json({ error: 'Model and Color are required' });
     }
 
-    const newCar = await carModel.addCar(userId, { model, color, plate_number });
+    const newCar = await carModel.createCar(userId, { model, color, plate_number });
 
     res.status(201).json({
       message: 'Car added successfully',
@@ -26,6 +26,20 @@ export const getMyCars = async (req, res) => {
     const userId = req.user.id;
     const cars = await carModel.getUserCars(userId);
     res.json(cars);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server Error' });
+  }
+};
+
+export const setDefaultCar = async (req, res) => {
+  try {
+    const carId = req.params.id;
+    const userId = req.user.id;
+    
+    await carModel.setDefault(userId, carId);
+    
+    res.json({ message: 'Default car updated successfully' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server Error' });
