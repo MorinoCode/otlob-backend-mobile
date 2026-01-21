@@ -3,7 +3,9 @@ import { updateItem } from '../controllers/menuController.js';
 
 const router = express.Router();
 
-// PATCH /api/items/:itemId
-router.patch('/:itemId', updateItem);
+// ========================================
+// Menu Item Management
+// ========================================
+router.patch('/:itemId', updateItem); // PATCH /api/items/:itemId - ویرایش آیتم منو
 
 export default router;

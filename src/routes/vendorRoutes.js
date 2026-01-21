@@ -4,14 +4,26 @@ import { verifyVendor } from '../middlewares/vendorAuthMiddleware.js';
 
 const router = express.Router();
 
-router.post('/', addVendor);
-router.post('/login', loginVendor);
-router.get('/all', getAllVendors);
-router.get('/nearby', getNearby);
-router.get('/:vendorId', getVendorDetails);
-router.get('/:vendorId/stats', verifyVendor, getStats);
-router.get('/:vendorId/orders', verifyVendor, getVendorOrders);
-router.get('/:vendorId/orders/completed', verifyVendor, getVendorCompletedOrders);
-router.patch('/:vendorId/orders/:orderId/status', verifyVendor, updateVendorOrderStatus);
+// ========================================
+// Public Routes (برای Mobile App)
+// ========================================
+router.post('/', addVendor); // ثبت vendor جدید
+router.post('/login', loginVendor); // ورود vendor
+router.get('/all', getAllVendors); // لیست همه vendors
+router.get('/nearby', getNearby); // vendors نزدیک
+
+// ========================================
+// Vendor Details (Public - اما با جزئیات کمتر)
+// ========================================
+router.get('/:vendorId', getVendorDetails); // جزئیات vendor
+
+// ========================================
+// Protected Routes (نیاز به Vendor Authentication)
+// ========================================
+// توجه: این routes باید بعد از static routes باشند
+router.get('/:vendorId/stats', verifyVendor, getStats); // آمار فروش
+router.get('/:vendorId/orders', verifyVendor, getVendorOrders); // سفارش‌های فعال
+router.get('/:vendorId/orders/completed', verifyVendor, getVendorCompletedOrders); // سفارش‌های تکمیل شده
+router.patch('/:vendorId/orders/:orderId/status', verifyVendor, updateVendorOrderStatus); // تغییر وضعیت سفارش
 
 export default router;

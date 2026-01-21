@@ -1,13 +1,18 @@
 import express from 'express';
-import { sendOtp,verifyOtp ,completeProfile} from '../controllers/authController.js';
+import { sendOtp, verifyOtp, completeProfile } from '../controllers/authController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-// POST /api/auth/login
-// router.post('/login', loginOrRegister);
-router.post('/send-otp', sendOtp);
-router.post('/verify-otp', verifyOtp);
-router.post('/complete-profile', protect, completeProfile);
+// ========================================
+// Authentication Routes (Public)
+// ========================================
+router.post('/send-otp', sendOtp); // ارسال کد OTP
+router.post('/verify-otp', verifyOtp); // تایید OTP و دریافت token
+
+// ========================================
+// Profile Completion (Protected)
+// ========================================
+router.post('/complete-profile', protect, completeProfile); // تکمیل پروفایل کاربر
 
 export default router;

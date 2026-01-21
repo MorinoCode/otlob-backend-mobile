@@ -13,6 +13,8 @@ import orderRoutes from "./routes/orderRoutes.js";
 import menuRoutes from "./routes/menuRoutes.js";
 import itemRoutes from "./routes/itemRoutes.js";
 import uploadRoutes from './routes/uploadRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import vendorRequestRoutes from './routes/vendorRequestRoutes.js';
 
 const app = express();
 
@@ -36,19 +38,34 @@ app.use(morgan('dev'));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // --- Routes ---
-app.use('/api/auth', authRoutes);
-app.use('/api/cars', carRoutes);
-app.use('/api/vendors', vendorRoutes);
-app.use('/api/orders', orderRoutes);
+// توجه: ترتیب routes مهم است - static routes قبل از dynamic routes
 
-// روت تو در تو برای منوی یک رستوران خاص
+// Authentication & User Management
+app.use('/api/auth', authRoutes);
+
+// Car Management (Mobile App)
+app.use('/api/cars', carRoutes);
+
+// Vendor Routes (Public + Protected)
+app.use('/api/vendors', vendorRoutes);
+
+// Menu Routes (Nested under vendors - باید بعد از vendorRoutes باشد)
 app.use('/api/vendors/:vendorId/menu', menuRoutes);
 
-// روت‌های مدیریت آیتم‌ها (ویرایش تکی)
+// Order Management (Mobile App)
+app.use('/api/orders', orderRoutes);
+
+// Menu Item Management
 app.use('/api/items', itemRoutes);
 
-// روت آپلود فایل
+// File Upload
 app.use('/api/upload', uploadRoutes);
+
+// Admin Panel Routes (باید در انتها باشد تا با vendor routes تداخل نداشته باشد)
+app.use('/api/admin', adminRoutes);
+
+// Vendor Registration Requests (Public + Admin)
+app.use('/api/vendor-requests', vendorRequestRoutes);
 
 // --- Error Handling Middleware ---
 app.use((err, req, res, next) => {

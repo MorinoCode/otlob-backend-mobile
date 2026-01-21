@@ -4,15 +4,20 @@ import { protect } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
+// همه routes نیاز به authentication دارند
 router.use(protect);
 
-// 1. روت‌های ثابت (Static) اولویت دارند - نام روت را به /my تغییر دادیم
-router.get('/my', orderController.getMyOrders);
+// ========================================
+// Order Management (Mobile App - User)
+// ========================================
+// روت‌های static باید قبل از dynamic routes باشند
+router.get('/my', orderController.getMyOrders); // لیست سفارش‌های من
+router.post('/', orderController.createOrder); // ایجاد سفارش جدید
 
-// 2. روت‌های متغیر (Dynamic) در انتها
-router.post('/', orderController.createOrder);
-router.get('/:orderId', orderController.getOrderDetails); 
-router.patch('/:orderId/status', orderController.updateOrderStatus);
-router.post('/:orderId/rate', orderController.rateOrder); // روت جدید برای امتیاز
-router.get('/:orderId/items', orderController.getOrderItemsList);
+// روت‌های dynamic (با :orderId) در انتها
+router.get('/:orderId', orderController.getOrderDetails); // جزئیات سفارش
+router.get('/:orderId/items', orderController.getOrderItemsList); // لیست آیتم‌های سفارش
+router.patch('/:orderId/status', orderController.updateOrderStatus); // تغییر وضعیت (برای کاربر)
+router.post('/:orderId/rate', orderController.rateOrder); // امتیاز دادن به سفارش
+
 export default router;

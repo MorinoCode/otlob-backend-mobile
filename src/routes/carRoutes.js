@@ -1,12 +1,17 @@
 import express from 'express';
 import { addUserCar, getMyCars, setDefaultCar } from '../controllers/carController.js';
-import { protect } from '../middlewares/authMiddleware.js'; // Negahban ro seda mizanim
+import { protect } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-// Har 2 ta route bayad Protect beshan (yani faghat kasi ke login karde dastresi dare)
-router.post('/', protect, addUserCar); // Ezafe kardane mashin
-router.get('/', protect, getMyCars);   // Didane list mashin ha
-router.patch('/:id/set-default', protect, setDefaultCar); // Ozviat dadan be onvane pishfarz
+// همه routes نیاز به authentication دارند
+router.use(protect);
+
+// ========================================
+// Car Management (Mobile App)
+// ========================================
+router.post('/', addUserCar); // اضافه کردن ماشین جدید
+router.get('/', getMyCars); // دریافت لیست ماشین‌های کاربر
+router.patch('/:id/set-default', setDefaultCar); // تنظیم ماشین پیش‌فرض
 
 export default router;
